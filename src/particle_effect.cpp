@@ -255,6 +255,7 @@ void ParticleEffect::sphere_emit(Particle &particle)
     particle.lifeTime = lifeTime;
     particle.age = 0;
     particle.size = 5.0f;
+    particle.color.r = 0.5, particle.color.g = 0.5, particle.color.b = 0.5;
 }
 
 float fclamp(float value, float lower, float higher)
@@ -281,7 +282,7 @@ void ParticleEffect::update(float fDeltaTime)
         float life_ratio = fclamp(particle.age / particle.lifeTime, 0, 1); 
         particle.velocity += (force * fDeltaTime) ;
         particle.position += (particle.velocity * fDeltaTime);
-        particle.color += 0.01; // to fix - experiment
+        particle.color += 0.005; // to fix - experiment
         particle.rotate = glm::lerp<float>(0.0f, 720.0f, life_ratio); // to make the particle face the camera
         particle.size = glm::lerp<float>(5.0f, 0.0f, life_ratio);
     }
