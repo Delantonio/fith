@@ -10,7 +10,7 @@
 #include <memory>
 
 #define TEST_OPENGL_ERROR()                                                             \
-  do {									\
+do {									\
     GLenum err = glGetError();					                        \
     if (err == GL_INVALID_OPERATION) std::cerr << "GL invalid operation " << __LINE__ <<  std::endl; \
     if (err != GL_NO_ERROR) std::cerr << err << " " << "OpenGL ERROR! " << __LINE__ << " " << gluErrorString(err) << std::endl; \
@@ -26,7 +26,7 @@ class program
         program();
         ~program();
         program(program &&prog);
-        static std::unique_ptr<program> make_program(std::string &vertex_shader_src, std::string &fragment_shader);
+        static std::unique_ptr<program> make_program(std::string &vertex_shader, std::string &fragment_shader, std::string &geometry_shader);
         bool get_log(GLuint shader_id[]);
         bool is_ready();
         void use();

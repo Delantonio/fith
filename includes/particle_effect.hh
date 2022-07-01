@@ -34,6 +34,7 @@ class ParticleEffect
         //virtual void render();
         // virtual void render(std::vector<Vertex> &vertices);
         virtual void render(std::vector<GLfloat> &vertices);
+        virtual void render_geometry();
 
         void randomize();
         void emit();

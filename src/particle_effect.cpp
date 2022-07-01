@@ -158,19 +158,60 @@ std::vector<GLfloat> ParticleEffect::gl_build_vertices()
         vertices.push_back(particle.color[3]);
         vertices.push_back(1);
         vertices.push_back(0);
-        // GLfloat *pos3 = glm::value_ptr(position3);
-        // vertices.push_back(pos3[0]);
-        // vertices.push_back(pos3[1]);
-        // vertices.push_back(pos3[2]);
-        // vertices.push_back(particle.color[0]);
-        // vertices.push_back(particle.color[1]);
-        // vertices.push_back(particle.color[2]);
-        // vertices.push_back(particle.color[3]);
-        // vertices.push_back(0);
-        // vertices.push_back(0);
+        GLfloat *pos3 = glm::value_ptr(position3);
+        vertices.push_back(pos3[0]);
+        vertices.push_back(pos3[1]);
+        vertices.push_back(pos3[2]);
+        vertices.push_back(particle.color[0]);
+        vertices.push_back(particle.color[1]);
+        vertices.push_back(particle.color[2]);
+        vertices.push_back(particle.color[3]);
+        vertices.push_back(0);
+        vertices.push_back(0);
     }
     return vertices;
 }
+
+void ParticleEffect::render_geometry()
+{ 
+    std::vector<GLfloat> vertices;
+    for (const auto &particle : particles)
+    {
+        // std::cout << "particle.pos = " << particle.position[0]
+        //     << " " << particle.position[1]
+        //     << " " << particle.position[2] << std::endl;
+        vertices.push_back(particle.position[0]);
+        vertices.push_back(particle.position[1]);
+        vertices.push_back(particle.position[2]);
+        vertices.push_back(particle.color[0]);
+        vertices.push_back(particle.color[1]);
+        vertices.push_back(particle.color[2]);
+        vertices.push_back(particle.color[3]);
+    }
+    GLint particle_size_location = glGetUniformLocation(program_id, "size");
+    TEST_OPENGL_ERROR();
+    glUniform1f(particle_size_location, particles[0].size);
+    TEST_OPENGL_ERROR();
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+                          (void *)0);TEST_OPENGL_ERROR();
+    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
+
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
+    glDrawArrays(GL_POINTS, 0, vertices.size());TEST_OPENGL_ERROR();
+}
+
 
 void ParticleEffect::render(std::vector<GLfloat> &vertices)
 {
@@ -269,7 +310,7 @@ float fclamp(float value, float lower, float higher)
 
 void ParticleEffect::update(float fDeltaTime)
 {
-    std::cout << particles.size() << std::endl;
+    std::cout << "nb_particles" << particles.size() << std::endl;
     for (auto &particle : particles)
     {
         particle.age += fDeltaTime;
@@ -282,7 +323,7 @@ void ParticleEffect::update(float fDeltaTime)
         float life_ratio = fclamp(particle.age / particle.lifeTime, 0, 1); 
         particle.velocity += (force * fDeltaTime) ;
         particle.position += (particle.velocity * fDeltaTime);
-        particle.color += 0.005; // to fix - experiment
+        particle.color += 0.5; // to fix - experiment
         particle.rotate = glm::lerp<float>(0.0f, 720.0f, life_ratio); // to make the particle face the camera
         particle.size = glm::lerp<float>(5.0f, 0.0f, life_ratio);
     }

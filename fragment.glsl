@@ -1,15 +1,15 @@
 #version 450
 
-uniform sampler2D texture_sampler;
-/* uniform sampler2D lighting_sampler; */
-/* uniform sampler2D normalmap_sampler; */
+uniform sampler2D texture0;
+uniform sampler2D particle_texture0;
 
-/* in vec3 out_color; */
-in vec4 out_color;
-layout(location=0) out vec4 output_color;
-in vec2 uv_coord;
+layout(location=0) out vec4 frag_color;
+in vec4 vertex_color;
+in vec2 vertex_uv;
 
 void main() {
-    /* output_color = vec4(out_color, 1.0) + texture(texture_sampler, uv_coord);  */
-    output_color = out_color + texture(texture_sampler, uv_coord);
+    vec2 uv = vertex_uv;
+    uv.y *= -1.0;
+    /* frag_color = vertex_color + texture(texture0, uv); */
+    frag_color = texture(particle_texture0, uv);
 }
