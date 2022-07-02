@@ -13,13 +13,14 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect particle_effect(1000);
+ParticleEffect particle_effect(1);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
 extern GLuint program_id = 0;
 
 void display()
 {
+    std::cout << "display" << std::endl;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
     // std::cout << "drawing..." << std::endl;
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
@@ -36,6 +37,8 @@ void idle()
 {
     elapsed_time += delta_time;
     particle_effect.update(delta_time);
+    if (elapsed_time <= 0.04f)
+        std::cout << "idle" << std::endl;
 }
 void window_resize(int width, int height)
 {
@@ -90,12 +93,12 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
     std::vector<GLfloat> vertices;
     std::vector<GLuint> indices;
     std::string file = "trian_cylinder.obj";
-    if (!load_obj(file, vertices, indices))
-    {
-        std::cerr << "Error while loading file" << std::endl;
-        return -1;
-    }
-    vertices_size = indices.size();
+    // if (!load_obj(file, vertices, indices))
+    // {
+    //     std::cerr << "Error while loading file" << std::endl;
+    //     return -1;
+    // }
+    // vertices_size = indices.size();
     // for (unsigned int i = 0; i < vertices_size; i+=8)
     // {
     //     std::cout << "v " << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << " ";
@@ -108,32 +111,33 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
     GLuint texture1;
     particle_effect.load_texture("textures/red_glow_tr.tga", "particle_texture0", texture1, 0);
 
-    unsigned int VBO, VAO, EBO;
+    // unsigned int VBO, VAO, EBO;
+    unsigned int VAO;
     glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
-    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
-    glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
+    // glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
+    // glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
 
     glBindVertexArray(VAO);TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
+    // glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
 
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
-                 GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
+    //              GL_STATIC_DRAW);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)0);TEST_OPENGL_ERROR();
-    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)0);TEST_OPENGL_ERROR();
+    // glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)(6 * sizeof(float)));
+    // glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glBindVertexArray(0);TEST_OPENGL_ERROR();
     glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     return true;
@@ -144,7 +148,7 @@ bool init_POV(std::shared_ptr<program> &prog)
     matrix4 id = matrix4::identity();
     GLint view_location = glGetUniformLocation(prog->program_id, "model_view_matrix");TEST_OPENGL_ERROR();
     std::cout << "view_location " << view_location << std::endl;
-    matrix4 cam = id.look_at(3, 0, -5, 0, 0, 1, 0, 1, 0);
+    matrix4 cam = id.look_at(5, 0, -5, 0, 0, 1, 0, 1, 0);
     glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(cam.matrix));
     TEST_OPENGL_ERROR();
 
@@ -155,11 +159,11 @@ bool init_POV(std::shared_ptr<program> &prog)
     TEST_OPENGL_ERROR();
 
     // Set uniforms
-    GLint color = glGetUniformLocation(prog->program_id, "color");
-    const GLfloat frag_color[] = { 0.9, 0.16, 0.67 }; // pink
-    std::cout << "color " << color << std::endl;
-    glUniform3fv(color, 1, frag_color);
-    TEST_OPENGL_ERROR();
+    // GLint color = glGetUniformLocation(prog->program_id, "color");
+    // const GLfloat frag_color[] = { 0.9, 0.16, 0.67 }; // pink
+    // std::cout << "color " << color << std::endl;
+    // glUniform3fv(color, 1, frag_color);
+    // TEST_OPENGL_ERROR();
 
     GLint light_pos = glGetUniformLocation(prog->program_id, "light_pos");
     const GLfloat light_position[] = { 1.0, 4.0, -3.0 }; // top right - no depth

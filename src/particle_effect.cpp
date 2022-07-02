@@ -49,7 +49,7 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     
     // auto texture = tifo::load_image(filename.c_str());
     int width, height, bpp;
-    auto texture = stbi_load(filename.c_str(), &width, &height, &bpp, 3);
+    auto texture = stbi_load(filename.c_str(), &width, &height, &bpp, 4);
     if (texture == 0)
         return false;
 
@@ -57,7 +57,7 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
     glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D,texture_id);TEST_OPENGL_ERROR();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture);TEST_OPENGL_ERROR();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);TEST_OPENGL_ERROR();
     tex_location = glGetUniformLocation(program_id, tex_variable.c_str());TEST_OPENGL_ERROR();
     glUniform1i(tex_location, uniform_index);TEST_OPENGL_ERROR();
 
@@ -178,23 +178,29 @@ std::vector<GLfloat> ParticleEffect::gl_build_vertices()
 void ParticleEffect::render_geometry()
 { 
     std::vector<GLfloat> vertices;
+    // int i = 0;
     for (const auto &particle : particles)
     {
-        // std::cout << "particle.pos = " << particle.position[0]
+        // std::cout << i++ << " particle.pos = " << particle.position[0]
         //     << " " << particle.position[1]
         //     << " " << particle.position[2] << std::endl;
         vertices.push_back(particle.position[0]);
         vertices.push_back(particle.position[1]);
         vertices.push_back(particle.position[2]);
-        vertices.push_back(particle.color[0]);
-        vertices.push_back(particle.color[1]);
-        vertices.push_back(particle.color[2]);
-        vertices.push_back(particle.color[3]);
+        // vertices.push_back(particle.color[0]);
+        // vertices.push_back(particle.color[1]);
+        // vertices.push_back(particle.color[2]);
+        // vertices.push_back(particle.color[3]);
     }
     GLint particle_size_location = glGetUniformLocation(program_id, "size");
     TEST_OPENGL_ERROR();
     glUniform1f(particle_size_location, particles[0].size);
+    // glUniform1f(particle_size_location, 5);
     TEST_OPENGL_ERROR();
+
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     unsigned int VBO;
     glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
@@ -203,13 +209,16 @@ void ParticleEffect::render_geometry()
 
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat),
                           (void *)0);TEST_OPENGL_ERROR();
     glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+    //                       (void *)0);TEST_OPENGL_ERROR();
+    // glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
-                          (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
+    //                       (void *)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glDrawArrays(GL_POINTS, 0, vertices.size());TEST_OPENGL_ERROR();
