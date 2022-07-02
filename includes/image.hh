@@ -11,6 +11,8 @@
 #define	IMAGE_HH
 
 #include <cstdint>
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 #define IMAGE_NB_LEVELS 256
 #define IMAGE_MAX_LEVEL 255

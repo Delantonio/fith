@@ -47,7 +47,9 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
         texture_id = 0;
     }
     
-    auto texture = tifo::load_image(filename.c_str());
+    // auto texture = tifo::load_image(filename.c_str());
+    int width, height, bpp;
+    auto texture = stbi_load(filename.c_str(), &width, &height, &bpp, 3);
     if (texture == 0)
         return false;
 
@@ -55,7 +57,7 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     glGenTextures(1, &texture_id);TEST_OPENGL_ERROR();
     glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D,texture_id);TEST_OPENGL_ERROR();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->sx, texture->sy, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->pixels);TEST_OPENGL_ERROR();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture);TEST_OPENGL_ERROR();
     tex_location = glGetUniformLocation(program_id, tex_variable.c_str());TEST_OPENGL_ERROR();
     glUniform1i(tex_location, uniform_index);TEST_OPENGL_ERROR();
 
@@ -64,7 +66,8 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
 
-    delete texture;
+    // delete texture;
+    stbi_image_free(texture);
     return (texture_id != 0);
 }
 std::vector<Vertex> ParticleEffect::build_vertices()
@@ -310,7 +313,7 @@ float fclamp(float value, float lower, float higher)
 
 void ParticleEffect::update(float fDeltaTime)
 {
-    std::cout << "nb_particles" << particles.size() << std::endl;
+    // std::cout << "nb_particles" << particles.size() << std::endl;
     for (auto &particle : particles)
     {
         particle.age += fDeltaTime;
@@ -323,8 +326,12 @@ void ParticleEffect::update(float fDeltaTime)
         float life_ratio = fclamp(particle.age / particle.lifeTime, 0, 1); 
         particle.velocity += (force * fDeltaTime) ;
         particle.position += (particle.velocity * fDeltaTime);
+        // std::cout << "pos = " 
+        //     << particle.position[0] << " "
+        //     << particle.position[1] << " "
+        //     << particle.position[2] << std::endl;
         particle.color += 0.5; // to fix - experiment
         particle.rotate = glm::lerp<float>(0.0f, 720.0f, life_ratio); // to make the particle face the camera
-        particle.size = glm::lerp<float>(5.0f, 0.0f, life_ratio);
+        // particle.size = glm::lerp<float>(5.0f, 0.0f, life_ratio);
     }
 }

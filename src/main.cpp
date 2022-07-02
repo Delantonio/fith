@@ -13,7 +13,7 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect particle_effect(100);
+ParticleEffect particle_effect(1000);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
 extern GLuint program_id = 0;
@@ -21,7 +21,7 @@ extern GLuint program_id = 0;
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
-    std::cout << "drawing..." << std::endl;
+    // std::cout << "drawing..." << std::endl;
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
     // glDrawElements(GL_TRIANGLES, vertices_size, GL_UNSIGNED_INT, 0);TEST_OPENGL_ERROR();
 
@@ -106,7 +106,7 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
 
     particle_effect.g_position = glm::vec3(0, 0, 5);
     GLuint texture1;
-    particle_effect.load_texture("textures/lighting.tga", "particle_texture0", texture1, 0);
+    particle_effect.load_texture("textures/red_glow_tr.tga", "particle_texture0", texture1, 0);
 
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
@@ -144,7 +144,7 @@ bool init_POV(std::shared_ptr<program> &prog)
     matrix4 id = matrix4::identity();
     GLint view_location = glGetUniformLocation(prog->program_id, "model_view_matrix");TEST_OPENGL_ERROR();
     std::cout << "view_location " << view_location << std::endl;
-    matrix4 cam = id.look_at(0, 0, -5, 0, 0, 1, 0, 1, 0);
+    matrix4 cam = id.look_at(3, 0, -5, 0, 0, 1, 0, 1, 0);
     glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(cam.matrix));
     TEST_OPENGL_ERROR();
 
@@ -190,7 +190,7 @@ bool init_textures()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->sx, texture->sy, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->pixels);TEST_OPENGL_ERROR();
     tex_location = glGetUniformLocation(program_id, "texture0");TEST_OPENGL_ERROR();
     std::cout << "tex_location " << tex_location << std::endl;
-    glUniform1i(tex_location,0);TEST_OPENGL_ERROR();
+    glUniform1i(tex_location,1);TEST_OPENGL_ERROR();
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
@@ -233,6 +233,6 @@ int main(int argc, char *argv[])
     // test_frustrum();
     // test_look_at();
     init_POV(prog);
-    init_textures();
+    // init_textures();
     glutMainLoop();
 }

@@ -1,3 +1,7 @@
+sources_stb = files(
+  'stb.cpp',
+  )
+
 sources = files(
   'image.cpp',
   'image_io.cpp',

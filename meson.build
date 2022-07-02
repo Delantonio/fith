@@ -9,4 +9,5 @@ glew = dependency('glew')
 glut = dependency('glut')
 
 subdir('src')
-executable('render', sources: sources, dependencies: [opengl, glew, glut] , include_directories: includes)
+stb = static_library('stb', sources: sources_stb, include_directories: includes)
+executable('render', sources: sources, dependencies: [opengl, glew, glut], link_with: stb, include_directories: includes)

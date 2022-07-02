@@ -12,7 +12,7 @@ in vec4 color[];
 out vec2 vertex_uv;
 out vec4 vertex_color;
    
-void main (void)
+void main()
 {
   vec4 P = gl_in[0].gl_Position;
 
