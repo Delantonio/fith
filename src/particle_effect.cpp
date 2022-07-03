@@ -15,6 +15,7 @@ ParticleEffect::ParticleEffect(unsigned int nb_particles)
 {
     g_position = glm::vec3(0, 0, 3);
     resize(nb_particles);
+    update(0.033333f);
 }
 ParticleEffect::~ParticleEffect()
 {
@@ -70,120 +71,19 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     stbi_image_free(texture);
     return (texture_id != 0);
 }
-std::vector<Vertex> ParticleEffect::build_vertices()
-{
-    std::vector<Vertex> vertices;
-    glm::vec3 X(0.5, 0, 0);
-    glm::vec3 Y(0, 0.5, 0);
-    glm::vec3 Z(0, 0, 1);
-
-    for (auto &particle : particles)
-    {
-        glm::quat rotation = glm::angleAxis(particle.rotate, Z);
-
-        glm::vec3 position0 = particle.position + (rotation * (-X - Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position1 = particle.position + (rotation * (X - Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position2 = particle.position + (rotation * (X + Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position3 = particle.position + (rotation * (-X + Y) * particle.size);//  * cameraRotation;
-
-        // Bottom left
-        Vertex v0(position0, particle.color, glm::vec2(0, 1));
-        vertices.push_back(v0);
-        // Bottom right
-        Vertex v1(position1, particle.color, glm::vec2(1 ,1));
-        vertices.push_back(v1);
-        // Top right
-        Vertex v2(position2, particle.color, glm::vec2(1, 0));
-        vertices.push_back(v2);
-        // Top left
-        Vertex v3(position3, particle.color, glm::vec2(0, 0));
-        vertices.push_back(v3);
-    }
-
-    return vertices;
-}
-std::vector<GLfloat> ParticleEffect::gl_build_vertices()
-{
-    std::vector<GLfloat> vertices;
-    glm::vec3 X(0.5, 0, 0);
-    glm::vec3 Y(0, 0.5, 0);
-    glm::vec3 Z(0, 0, 1);
-
-    size_t i = 0;
-    for (auto &particle : particles)
-    {
-        glm::quat rotation = glm::angleAxis(particle.rotate, Z);
-
-        glm::vec3 position0 = particle.position + (/*rotation **/ (-X - Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position1 = particle.position + (/*rotation **/ (X - Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position2 = particle.position + (/*rotation **/ (X + Y) * particle.size);//  * cameraRotation;
-        glm::vec3 position3 = particle.position + (/*rotation **/ (-X + Y) * particle.size);//  * cameraRotation;
-
-        if (i++ == 0)
-        {
-            std::cout << glm::to_string(rotation) << std::endl;
-            std::cout << glm::to_string(particle.position) << std::endl;
-            std::cout << particle.size << std::endl;
-
-            std::cout << glm::to_string(position0) << std::endl;
-            std::cout << glm::to_string(position1) << std::endl;
-            std::cout << glm::to_string(position2) << std::endl;
-            std::cout << glm::to_string(position3) << std::endl;
-        }
-
-        GLfloat *pos0 = glm::value_ptr(position0);
-        vertices.push_back(pos0[0]);
-        vertices.push_back(pos0[1]);
-        vertices.push_back(pos0[2]);
-        vertices.push_back(particle.color[0]);
-        vertices.push_back(particle.color[1]);
-        vertices.push_back(particle.color[2]);
-        vertices.push_back(particle.color[3]);
-        vertices.push_back(0);
-        vertices.push_back(1);
-        GLfloat *pos1 = glm::value_ptr(position1);
-        vertices.push_back(pos1[0]);
-        vertices.push_back(pos1[1]);
-        vertices.push_back(pos1[2]);
-        vertices.push_back(particle.color[0]);
-        vertices.push_back(particle.color[1]);
-        vertices.push_back(particle.color[2]);
-        vertices.push_back(particle.color[3]);
-        vertices.push_back(1);
-        vertices.push_back(1);
-        GLfloat *pos2 = glm::value_ptr(position2);
-        vertices.push_back(pos2[0]);
-        vertices.push_back(pos2[1]);
-        vertices.push_back(pos2[2]);
-        vertices.push_back(particle.color[0]);
-        vertices.push_back(particle.color[1]);
-        vertices.push_back(particle.color[2]);
-        vertices.push_back(particle.color[3]);
-        vertices.push_back(1);
-        vertices.push_back(0);
-        GLfloat *pos3 = glm::value_ptr(position3);
-        vertices.push_back(pos3[0]);
-        vertices.push_back(pos3[1]);
-        vertices.push_back(pos3[2]);
-        vertices.push_back(particle.color[0]);
-        vertices.push_back(particle.color[1]);
-        vertices.push_back(particle.color[2]);
-        vertices.push_back(particle.color[3]);
-        vertices.push_back(0);
-        vertices.push_back(0);
-    }
-    return vertices;
-}
 
 void ParticleEffect::render_geometry()
 { 
+    // if (particles.empty())
+    //     return;
+    std::cout << "render geometry" << std::endl;
     std::vector<GLfloat> vertices;
-    // int i = 0;
+    int i = 0;
     for (const auto &particle : particles)
     {
-        // std::cout << i++ << " particle.pos = " << particle.position[0]
-        //     << " " << particle.position[1]
-        //     << " " << particle.position[2] << std::endl;
+        std::cout << i++ << " particle.pos = " << particle.position[0]
+            << " " << particle.position[1]
+            << " " << particle.position[2] << std::endl;
         vertices.push_back(particle.position[0]);
         vertices.push_back(particle.position[1]);
         vertices.push_back(particle.position[2]);
@@ -192,64 +92,42 @@ void ParticleEffect::render_geometry()
         // vertices.push_back(particle.color[2]);
         // vertices.push_back(particle.color[3]);
     }
+    std::cout << "pushed back" << std::endl;
+    vertices.erase(vertices.begin());
+    vertices.erase(vertices.begin());
+    vertices.erase(vertices.begin());
     GLint particle_size_location = glGetUniformLocation(program_id, "size");
     TEST_OPENGL_ERROR();
-    glUniform1f(particle_size_location, particles[0].size);
-    // glUniform1f(particle_size_location, 5);
+    // glUniform1f(particle_size_location, particles[0].size);
+    glUniform1f(particle_size_location, 5);
     TEST_OPENGL_ERROR();
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
     unsigned int VBO;
     glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
 
+    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
 
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    for (size_t i = 0; i < vertices.size(); i++)
+    {
+        std::cout << "vertice " << i << " = " << vertices[i] << std::endl; 
+    }
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat),
                           (void *)0);TEST_OPENGL_ERROR();
     glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
-    //                       (void *)0);TEST_OPENGL_ERROR();
-    // glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
-
-    // glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
-    //                       (void *)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glDrawArrays(GL_POINTS, 0, vertices.size());TEST_OPENGL_ERROR();
-}
-
-
-void ParticleEffect::render(std::vector<GLfloat> &vertices)
-{
-    unsigned int VBO, EBO;
-    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
-    glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
-
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                          (void *)0);TEST_OPENGL_ERROR();
-    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
-
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                          (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float),
-                          (void *)(7 * sizeof(float)));
-    glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
-    glDrawArrays( GL_TRIANGLES, 0, vertices.size());TEST_OPENGL_ERROR();
+    glDeleteBuffers(1, &VBO);
+    glBindVertexArray(0);TEST_OPENGL_ERROR();
 }
 
 void ParticleEffect::resize(unsigned int n_particles)

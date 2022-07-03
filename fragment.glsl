@@ -12,4 +12,5 @@ void main() {
     /* uv.y *= -1.0; */
     /* frag_color = vertex_color + texture(texture0, uv); */
     frag_color = texture(particle_texture0, uv);
+    /* frag_color = vec4(1.0, 1.0, 0.0, 1.0); */
 }

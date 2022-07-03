@@ -33,15 +33,15 @@ class ParticleEffect
         virtual void update(float fDeltaTime);
         //virtual void render();
         // virtual void render(std::vector<Vertex> &vertices);
-        virtual void render(std::vector<GLfloat> &vertices);
+        // virtual void render(std::vector<GLfloat> &vertices);
         virtual void render_geometry();
 
         void randomize();
         void emit();
 
         bool load_texture(const std::string &filename, const std::string &tex_variable, GLuint &texture_id, GLint uniform_index);
-        std::vector<Vertex> build_vertices();
-        std::vector<GLfloat> gl_build_vertices();
+        // std::vector<Vertex> build_vertices();
+        // std::vector<GLfloat> gl_build_vertices();
 
         void resize(unsigned int n_particles);
 

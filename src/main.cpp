@@ -13,32 +13,37 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect particle_effect(1);
+ParticleEffect particle_effect(2);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
 extern GLuint program_id = 0;
 
+int display_count = 0;
+
 void display()
 {
-    std::cout << "display" << std::endl;
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
-    // std::cout << "drawing..." << std::endl;
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
     // glDrawElements(GL_TRIANGLES, vertices_size, GL_UNSIGNED_INT, 0);TEST_OPENGL_ERROR();
 
     // std::vector<GLfloat> vertices = particle_effect.gl_build_vertices();
     // particle_effect.render(vertices);
-    particle_effect.render_geometry();
+    if (++display_count <= 3)
+    {
+        std::cout << "drawing..." << std::endl;
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
+        std::cout << "particles.size() = " << particle_effect.particles.size() << std::endl;
+        particle_effect.render_geometry();
 
-    glutSwapBuffers();TEST_OPENGL_ERROR();
-    glutPostRedisplay();TEST_OPENGL_ERROR();
+        glutSwapBuffers();TEST_OPENGL_ERROR();
+        glutPostRedisplay();TEST_OPENGL_ERROR();
+    }
 }
 void idle()
 {
+    if (elapsed_time < 0.03f)
+        std::cout << "update !" << std::endl;
     elapsed_time += delta_time;
     particle_effect.update(delta_time);
-    if (elapsed_time <= 0.04f)
-        std::cout << "idle" << std::endl;
 }
 void window_resize(int width, int height)
 {
@@ -107,7 +112,7 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
     //     std::cout << std::endl;
     // }
 
-    particle_effect.g_position = glm::vec3(0, 0, 5);
+    particle_effect.g_position = glm::vec3(0, 0, 10);
     GLuint texture1;
     particle_effect.load_texture("textures/red_glow_tr.tga", "particle_texture0", texture1, 0);
 
@@ -139,7 +144,7 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
 
     // glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glBindVertexArray(0);TEST_OPENGL_ERROR();
-    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
+    // glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     return true;
 }
 
@@ -148,7 +153,7 @@ bool init_POV(std::shared_ptr<program> &prog)
     matrix4 id = matrix4::identity();
     GLint view_location = glGetUniformLocation(prog->program_id, "model_view_matrix");TEST_OPENGL_ERROR();
     std::cout << "view_location " << view_location << std::endl;
-    matrix4 cam = id.look_at(5, 0, -5, 0, 0, 1, 0, 1, 0);
+    matrix4 cam = id.look_at(-3, 0, -3, 0, 0, 1, 0, 1, 0);
     glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(cam.matrix));
     TEST_OPENGL_ERROR();
 
