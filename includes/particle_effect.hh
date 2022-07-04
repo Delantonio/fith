@@ -5,10 +5,14 @@
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/norm.hpp>
 #include <vector>
 #include <string>
 #include <ctime>
+#include <cmath>
 #include <cstdlib>
+#include <algorithm>
+#include <random>
 
 struct Vertex
 {
@@ -62,5 +66,5 @@ class ParticleEffect
         glm::vec3 g_position; // global position
         float mean_lifetime = 6.5;
         float lifetime_deviation = 0;
-        float radius = 5.0;
+        float radius = 10.0;
 };

@@ -13,7 +13,7 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect red_particle_effect(200);
+ParticleEffect red_particle_effect(2000);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
 extern GLuint program_id = 0;
