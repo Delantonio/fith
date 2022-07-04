@@ -50,12 +50,17 @@ class ParticleEffect
         void emit(Particle &particle);
 
         void sphere_emit(Particle &particle);
+        void disc_emit(Particle &particle, float radius);
 
     public:
         unsigned int n_particles;
         std::vector<Particle> particles;
+        int remaining_particles;
         glm::mat4 local_to_world;
         GLuint texture_id;
         glm::vec3 force;
         glm::vec3 g_position; // global position
+        float mean_lifetime = 6.5;
+        float lifetime_deviation = 0;
+        float radius = 5.0;
 };

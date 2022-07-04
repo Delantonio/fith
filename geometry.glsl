@@ -19,26 +19,27 @@ void main()
   vec2 va = P.xy + vec2(-0.5, -0.5) * size;
   gl_Position = projection_matrix * vec4(va.xy, P.zw);
   vertex_uv = vec2(0.0, 0.0);
-  vertex_color = vec4(1.0,1.0,1.0,1.0);
+  vertex_color = color[0];
   EmitVertex();
   
-  vec2 vb = P.xy + vec2(-0.5, 0.5) * size;
-  gl_Position = projection_matrix * vec4(vb.xy, P.zw);
-  vertex_uv = vec2(0.0, 1.0);
-  vertex_color = vec4(1.0,1.0,1.0,1.0);
-  EmitVertex();
-
   vec2 vd = P.xy + vec2(0.5, -0.5) * size;
   gl_Position = projection_matrix * vec4(vd.xy, P.zw);
   vertex_uv = vec2(1.0, 0.0);
-  vertex_color = vec4(1.0,1.0,1.0,1.0);
+  vertex_color = color[0];
+  EmitVertex();
+
+  vec2 vb = P.xy + vec2(-0.5, 0.5) * size;
+  gl_Position = projection_matrix * vec4(vb.xy, P.zw);
+  vertex_uv = vec2(0.0, 1.0);
+  vertex_color = color[0];
   EmitVertex();
 
   vec2 vc = P.xy + vec2(0.5, 0.5) * size;
   gl_Position = projection_matrix * vec4(vc.xy, P.zw);
   vertex_uv = vec2(1.0, 1.0);
-  vertex_color = vec4(1.0,1.0,1.0,1.0);
+  vertex_color = color[0];
   EmitVertex();
+
   
   EndPrimitive();
 }

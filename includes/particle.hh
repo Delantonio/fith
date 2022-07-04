@@ -21,5 +21,4 @@ struct Particle
         float size;
         float age;
         float lifeTime;
-        float rotate;
 };

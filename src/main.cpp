@@ -13,7 +13,7 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect particle_effect(2);
+ParticleEffect red_particle_effect(200);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
 extern GLuint program_id = 0;
@@ -26,13 +26,12 @@ void display()
 
     // std::vector<GLfloat> vertices = particle_effect.gl_build_vertices();
     // particle_effect.render(vertices);
-    if (++display_count <= 3)
+    if (++display_count <= 100000)
     {
-        std::cout << "drawing..." << std::endl;
+        // std::cout << "drawing..." << std::endl;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
-        std::cout << "particles.size() = " << particle_effect.particles.size() << std::endl;
-        particle_effect.render_geometry();
+        red_particle_effect.render_geometry();
 
         glutSwapBuffers();TEST_OPENGL_ERROR();
         glutPostRedisplay();TEST_OPENGL_ERROR();
@@ -43,7 +42,7 @@ void idle()
     if (elapsed_time < 0.03f)
         std::cout << "update !" << std::endl;
     elapsed_time += delta_time;
-    particle_effect.update(delta_time);
+    red_particle_effect.update(delta_time);
 }
 void window_resize(int width, int height)
 {
@@ -112,39 +111,40 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
     //     std::cout << std::endl;
     // }
 
-    particle_effect.g_position = glm::vec3(0, 0, 10);
+    red_particle_effect.g_position = glm::vec3(0, -30, 50);
     GLuint texture1;
-    particle_effect.load_texture("textures/red_glow_tr.tga", "particle_texture0", texture1, 0);
+    red_particle_effect.load_texture("textures/white_glow_tr.tga", "particle_texture0", texture1, 0);
 
-    // unsigned int VBO, VAO, EBO;
-    unsigned int VAO;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
+
+    unsigned int VBO, VAO, EBO;
+    // unsigned int VAO;
     glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
-    // glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
-    // glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
+    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
+    glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
 
     glBindVertexArray(VAO);TEST_OPENGL_ERROR();
-    // glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
 
-    // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
-    //              GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
+                 GL_STATIC_DRAW);TEST_OPENGL_ERROR();
 
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-    //                       (void *)0);TEST_OPENGL_ERROR();
-    // glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)0);TEST_OPENGL_ERROR();
+    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
 
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-    //                       (void *)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
 
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-    //                       (void *)(6 * sizeof(float)));
-    // glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                          (void *)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
 
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glBindVertexArray(0);TEST_OPENGL_ERROR();
-    // glBindVertexArray(VAO);TEST_OPENGL_ERROR();
+    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     return true;
 }
 
@@ -153,7 +153,7 @@ bool init_POV(std::shared_ptr<program> &prog)
     matrix4 id = matrix4::identity();
     GLint view_location = glGetUniformLocation(prog->program_id, "model_view_matrix");TEST_OPENGL_ERROR();
     std::cout << "view_location " << view_location << std::endl;
-    matrix4 cam = id.look_at(-3, 0, -3, 0, 0, 1, 0, 1, 0);
+    matrix4 cam = id.look_at(0, 0, -5, 0, 0, 1, 0, 1, 0);
     glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(cam.matrix));
     TEST_OPENGL_ERROR();
 
@@ -170,17 +170,17 @@ bool init_POV(std::shared_ptr<program> &prog)
     // glUniform3fv(color, 1, frag_color);
     // TEST_OPENGL_ERROR();
 
-    GLint light_pos = glGetUniformLocation(prog->program_id, "light_pos");
-    const GLfloat light_position[] = { 1.0, 4.0, -3.0 }; // top right - no depth
-    std::cout << "light_pos " << light_pos << std::endl;
-    glUniform3fv(light_pos, 1, light_position);
-    TEST_OPENGL_ERROR();
+    // GLint light_pos = glGetUniformLocation(prog->program_id, "light_pos");
+    // const GLfloat light_position[] = { 1.0, 4.0, -3.0 }; // top right - no depth
+    // std::cout << "light_pos " << light_pos << std::endl;
+    // glUniform3fv(light_pos, 1, light_position);
+    // TEST_OPENGL_ERROR();
 
-    GLint light_color = glGetUniformLocation(prog->program_id, "light_color");
-    const GLfloat light_rgb[] = { 1.0, 1.0, 1.0 }; // white light
-    std::cout << "light_color " << light_color << std::endl;
-    glUniform3fv(light_color, 1, light_rgb);
-    TEST_OPENGL_ERROR();
+    // GLint light_color = glGetUniformLocation(prog->program_id, "light_color");
+    // const GLfloat light_rgb[] = { 1.0, 1.0, 1.0 }; // white light
+    // std::cout << "light_color " << light_color << std::endl;
+    // glUniform3fv(light_color, 1, light_rgb);
+    // TEST_OPENGL_ERROR();
 
     return true;
 }
