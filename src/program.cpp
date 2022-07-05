@@ -25,6 +25,65 @@ program::~program()
     glDeleteProgram(program_id);TEST_OPENGL_ERROR();
     program_id = 0;
 }
+std::unique_ptr<program> program::make_program(std::string &vertex_src,
+                             std::string &fragment_src)
+{
+    auto prog = std::make_unique<program>();
+    
+    prog->compile_status = GL_TRUE;
+    prog->link_status = GL_TRUE;
+    GLuint shader_id[2];
+    char *vertex_shd_src = (char*)std::malloc(vertex_src.length()*sizeof(char));
+    char *fragment_shd_src = (char*)std::malloc(fragment_src.length()*sizeof(char));
+    vertex_src.copy(vertex_shd_src,vertex_src.length());
+    fragment_src.copy(fragment_shd_src,fragment_src.length());
+
+    shader_id[0] = glCreateShader(GL_VERTEX_SHADER);TEST_OPENGL_ERROR();
+    shader_id[1] = glCreateShader(GL_FRAGMENT_SHADER);TEST_OPENGL_ERROR();
+
+    glShaderSource(shader_id[0], 1, (const GLchar**)&(vertex_shd_src), 0);TEST_OPENGL_ERROR();
+    glShaderSource(shader_id[1], 1, (const GLchar**)&(fragment_shd_src), 0);TEST_OPENGL_ERROR();
+
+    std::cout << "compilation..." << std::endl;
+    for(int i = 0 ; i < 2 ; i++)
+    {
+        glCompileShader(shader_id[i]);TEST_OPENGL_ERROR();
+    }
+    std::cout << "done" << std::endl;
+    
+    std::cout << "logging..." << std::endl;
+    if (!prog->get_log(shader_id))
+        return nullptr;
+    std::cout << "done" << std::endl;
+    std::free(vertex_shd_src);
+    std::free(fragment_shd_src);
+
+    prog->program_id=glCreateProgram();TEST_OPENGL_ERROR();
+    std::cout << "prog->program_id = " << prog->program_id << std::endl;
+    if (prog->program_id==0) 
+        return nullptr;
+
+    std::cout << "attaching..." << std::endl;
+    for(int i = 0 ; i < 2 ; i++) {
+        glAttachShader(prog->program_id, shader_id[i]);TEST_OPENGL_ERROR();
+    }
+    std::cout << "done" << std::endl;
+    std::cout << "linking..." << std::endl;
+    glLinkProgram(prog->program_id);TEST_OPENGL_ERROR();
+    std::cout << "done" << std::endl;
+
+    glGetProgramiv(prog->program_id, GL_LINK_STATUS, &prog->link_status);TEST_OPENGL_ERROR();
+
+    glDeleteShader(shader_id[0]);TEST_OPENGL_ERROR();
+    glDeleteShader(shader_id[1]);TEST_OPENGL_ERROR();
+    if (prog->link_status != GL_TRUE && !prog->get_log(shader_id))
+    {
+        std::cerr << "failed to make program" << std::endl;
+        return nullptr;
+    }
+
+    return prog;
+}
 
 std::unique_ptr<program> program::make_program(std::string &vertex_src,
                              std::string &fragment_src, std::string &geometry_src)

@@ -4,7 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include "particle_effect.hh"
+#include "fire_effect.hh"
+#include "smoke_effect.hh"
 #include "program.hh"
 #include "obj_loader.hh"
 #include "image.hh"
@@ -13,25 +14,33 @@
 #include <GL/freeglut_std.h>
 
 int vertices_size;
-ParticleEffect red_particle_effect(2000);
 float elapsed_time = 0.0f;
 float delta_time = 0.033333f;
-extern GLuint program_id = 0;
+extern GLuint fire_program_id = 0;
+extern GLuint object_program_id = 0;
+
+// FireEffect(position, nb_particles, radius, max_wind_zones)
+FireEffect flame_particle_effect({0, -30, 50}, 2000, 10.0f, 5);
+
+SmokeEffect smoke_particle_effect({0, -30, 50}, 200, 8.0f, 5);
 
 int display_count = 0;
 
 void display()
 {
-    // glDrawElements(GL_TRIANGLES, vertices_size, GL_UNSIGNED_INT, 0);TEST_OPENGL_ERROR();
-
-    // std::vector<GLfloat> vertices = particle_effect.gl_build_vertices();
-    // particle_effect.render(vertices);
     if (++display_count <= 100000)
     {
-        // std::cout << "drawing..." << std::endl;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // FILL or LINE to debug vertices and indices (backface culling)
-        red_particle_effect.render_geometry();
+
+        // Draw particle
+        glUseProgram(fire_program_id);
+        smoke_particle_effect.render();
+        flame_particle_effect.render();
+
+        // Draw scene
+        // glUseProgram(object_program_id);
+        // glDrawElements(GL_TRIANGLES, vertices_size, GL_UNSIGNED_INT, 0);TEST_OPENGL_ERROR();
 
         glutSwapBuffers();TEST_OPENGL_ERROR();
         glutPostRedisplay();TEST_OPENGL_ERROR();
@@ -42,7 +51,8 @@ void idle()
     if (elapsed_time < 0.03f)
         std::cout << "update !" << std::endl;
     elapsed_time += delta_time;
-    red_particle_effect.update(delta_time);
+    flame_particle_effect.update(delta_time);
+    smoke_particle_effect.update(delta_time);
 }
 void window_resize(int width, int height)
 {
@@ -57,7 +67,7 @@ bool init_glut(int &argc, char *argv[])
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(1024, 1024);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("TP2 POGL");
+    glutCreateWindow("Fire In The Howl - OpenGL");
     glutDisplayFunc(display);
     glutIdleFunc(idle);
     glutReshapeFunc(window_resize);
@@ -76,23 +86,35 @@ bool init_gl()
     return 1;
 }
 
-std::unique_ptr<program> init_shaders()
+bool init_shaders()
 {
-    std::string vertex_src = load("vertex.glsl");
-    std::string fragment_src = load("fragment.glsl");
-    std::string geometry_src = load("geometry.glsl");
+    std::string fire_vertex_src = load("fire_vs.glsl");
+    std::string fire_fragment_src = load("fire_fs.glsl");
+    std::string fire_geometry_src = load("fire_gs.glsl");
 
-    auto prog = program::make_program(vertex_src, fragment_src, geometry_src);
-    if (prog->is_ready())
-    {
-        prog->use();
-        std::cout << "shader program in use" << std::endl;
-        return prog;
-    }
-    return nullptr;
+    auto fire_prog = program::make_program(fire_vertex_src, fire_fragment_src, fire_geometry_src);
+    fire_program_id = fire_prog->program_id;
+    if (!fire_prog->is_ready())
+        return false;
+
+    fire_prog->use();
+    std::cout << "fire shader program in use" << std::endl;
+
+    // std::string object_vertex_src = load("object_vs.glsl");
+    // std::string object_fragment_src = load("object_fs.glsl");
+
+    // auto object_prog = program::make_program(object_vertex_src, object_fragment_src);
+    // object_program_id = object_prog->program_id;
+    // if (!object_prog->is_ready())
+    //     return false;
+
+    // object_prog->use();
+    // std::cout << "object shader program in use" << std::endl;
+
+    return true;
 }
 
-bool init_object_vbo(std::shared_ptr<program> &prog)
+bool init_object_vbo()
 {
     std::vector<GLfloat> vertices;
     std::vector<GLuint> indices;
@@ -103,80 +125,84 @@ bool init_object_vbo(std::shared_ptr<program> &prog)
     //     return -1;
     // }
     // vertices_size = indices.size();
-    // for (unsigned int i = 0; i < vertices_size; i+=8)
-    // {
-    //     std::cout << "v " << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << " ";
-    //     std::cout << "vn " << vertices[i + 3] << " " << vertices[i + 4] << " " << vertices[i + 5] << " ";
-    //     std::cout << "vt " << vertices[i + 6] << " " << vertices[i + 7];
-    //     std::cout << std::endl;
-    // }
 
-    red_particle_effect.g_position = glm::vec3(0, -30, 50);
     GLuint texture1;
-    red_particle_effect.load_texture("textures/white_glow_tr.tga", "particle_texture0", texture1, 0);
+    GLuint texture2;
+    flame_particle_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", texture1, 0);
+    smoke_particle_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", texture2, 0);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
 
-    unsigned int VBO, VAO, EBO;
-    // unsigned int VAO;
-    glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
-    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
-    glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
+    // unsigned int VBO, VAO, EBO;
+    // glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
+    // glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
+    // glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
 
-    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
+    // glBindVertexArray(VAO);TEST_OPENGL_ERROR();
+    // glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
 
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
-                 GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(),
+    //              GL_STATIC_DRAW);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)0);TEST_OPENGL_ERROR();
-    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)0);TEST_OPENGL_ERROR();
+    // glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                          (void *)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
+    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+    //                       (void *)(6 * sizeof(float)));
+    // glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
 
-    glBindVertexArray(0);TEST_OPENGL_ERROR();
-    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
+    // glBindVertexArray(0);TEST_OPENGL_ERROR();
+    // glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     return true;
 }
 
-bool init_POV(std::shared_ptr<program> &prog)
+bool init_POV()
 {
     matrix4 id = matrix4::identity();
-    GLint view_location = glGetUniformLocation(prog->program_id, "model_view_matrix");TEST_OPENGL_ERROR();
-    std::cout << "view_location " << view_location << std::endl;
-    matrix4 cam = id.look_at(0, 0, -5, 0, 0, 1, 0, 1, 0);
-    glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(cam.matrix));
-    TEST_OPENGL_ERROR();
-
-    GLint projection = glGetUniformLocation(prog->program_id, "projection_matrix");TEST_OPENGL_ERROR();
-    std::cout << "projection " << projection << std::endl;
+    matrix4 model_view = id.look_at(0, 0, -5, 0, 0, 1, 0, 1, 0);
     matrix4 proj = id.frustum(-1.0, 1.0, -1.0, 1.0, 1, 100);
-    glUniformMatrix4fv(projection, 1, GL_FALSE, glm::value_ptr(proj.matrix));
+
+    GLint fire_mv_loc = glGetUniformLocation(fire_program_id, "model_view_matrix");TEST_OPENGL_ERROR();
+    std::cout << "view_location " << fire_mv_loc << std::endl;
+    glUniformMatrix4fv(fire_mv_loc, 1, GL_FALSE, glm::value_ptr(model_view.matrix));
     TEST_OPENGL_ERROR();
 
-    // Set uniforms
-    // GLint color = glGetUniformLocation(prog->program_id, "color");
+    GLint fire_proj_loc = glGetUniformLocation(fire_program_id, "projection_matrix");TEST_OPENGL_ERROR();
+    std::cout << "projection " << fire_proj_loc << std::endl;
+    glUniformMatrix4fv(fire_proj_loc, 1, GL_FALSE, glm::value_ptr(proj.matrix));
+    TEST_OPENGL_ERROR();
+
+    // GLint object_mv_loc = glGetUniformLocation(object_program_id, "model_view_matrix");TEST_OPENGL_ERROR();
+    // std::cout << "view_location " << object_mv_loc << std::endl;
+    // glUniformMatrix4fv(object_mv_loc, 1, GL_FALSE, glm::value_ptr(model_view.matrix));
+    // TEST_OPENGL_ERROR();
+
+    // GLint object_proj_loc = glGetUniformLocation(object_program_id, "projection_matrix");TEST_OPENGL_ERROR();
+    // std::cout << "projection " << object_proj_loc << std::endl;
+    // glUniformMatrix4fv(object_proj_loc, 1, GL_FALSE, glm::value_ptr(proj.matrix));
+    // TEST_OPENGL_ERROR();
+
+    // // Set uniforms
+    // GLint color = glGetUniformLocation(fire_program_id, "color");
     // const GLfloat frag_color[] = { 0.9, 0.16, 0.67 }; // pink
     // std::cout << "color " << color << std::endl;
     // glUniform3fv(color, 1, frag_color);
     // TEST_OPENGL_ERROR();
 
-    // GLint light_pos = glGetUniformLocation(prog->program_id, "light_pos");
+    // GLint light_pos = glGetUniformLocation(fire_program_id, "light_pos");
     // const GLfloat light_position[] = { 1.0, 4.0, -3.0 }; // top right - no depth
     // std::cout << "light_pos " << light_pos << std::endl;
     // glUniform3fv(light_pos, 1, light_position);
     // TEST_OPENGL_ERROR();
 
-    // GLint light_color = glGetUniformLocation(prog->program_id, "light_color");
+    // GLint light_color = glGetUniformLocation(fire_program_id, "light_color");
     // const GLfloat light_rgb[] = { 1.0, 1.0, 1.0 }; // white light
     // std::cout << "light_color " << light_color << std::endl;
     // glUniform3fv(light_color, 1, light_rgb);
@@ -197,7 +223,7 @@ bool init_textures()
     glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D,texture_id);TEST_OPENGL_ERROR();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->sx, texture->sy, 0, GL_RGB, GL_UNSIGNED_BYTE, texture->pixels);TEST_OPENGL_ERROR();
-    tex_location = glGetUniformLocation(program_id, "texture0");TEST_OPENGL_ERROR();
+    tex_location = glGetUniformLocation(object_program_id, "texture_sampler");TEST_OPENGL_ERROR();
     std::cout << "tex_location " << tex_location << std::endl;
     glUniform1i(tex_location,1);TEST_OPENGL_ERROR();
 
@@ -227,21 +253,19 @@ int main(int argc, char *argv[])
         std::cerr << "Failed init_gl" << std::endl;
         std::exit(-1);
     }
-    std::shared_ptr<program> prog;
-    if (!(prog = init_shaders()))
+    if (!init_shaders())
     {
         std::cerr << "Failed init_shaders" << std::endl;
         std::exit(-1);
     }
-    program_id = prog->program_id;
-    if (!init_object_vbo(prog))
+    if (!init_object_vbo())
     {
         std::cerr << "Failed init_object_vbo" << std::endl;
         std::exit(-1);
     }
     // test_frustrum();
     // test_look_at();
-    init_POV(prog);
+    init_POV();
     // init_textures();
     glutMainLoop();
 }

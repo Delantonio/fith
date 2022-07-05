@@ -10,12 +10,13 @@
 #include "image_io.hh"
 #include "particle.hh"
 
-ParticleEffect::ParticleEffect(unsigned int nb_particles)
-    : local_to_world(1),
-    texture_id(0),
-    force({0, 2, 0}) // gravity
+
+ParticleEffect::ParticleEffect(glm::vec3 position, unsigned int nb_particles)
+    : force({0, -9.81, 0}) // gravity
+    , texture_id(0)
+    
 {
-    g_position = glm::vec3(0, 0, 5);
+    g_position = position;
     this->n_particles = nb_particles;
     remaining_particles = nb_particles;
     update(0.033333f);
@@ -40,7 +41,7 @@ void ParticleEffect::emit()
     }
 }
 
-bool ParticleEffect::load_texture(const std::string &filename, const std::string &tex_variable, GLuint &new_texture_id, GLint uniform_index)
+bool ParticleEffect::load_texture(GLuint &program_id, const std::string &filename, const std::string &tex_variable, GLuint &new_texture_id, GLint uniform_index)
 {
     if (texture_id != 0)
     {
@@ -67,6 +68,8 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
 
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     texture_id = new_texture_id;
 
     // delete texture;
@@ -74,17 +77,13 @@ bool ParticleEffect::load_texture(const std::string &filename, const std::string
     return (texture_id != 0);
 }
 
-void ParticleEffect::render_geometry()
+void ParticleEffect::render()
 { 
-    // if (particles.empty())
-    //     return;
+    if (!particles.size())
+        return;
     std::vector<GLfloat> vertices;
-    // int i = 0;
     for (const auto &particle : particles)
     {
-        // std::cout << i++ << " particle.pos = " << particle.position[0]
-        //     << " " << particle.position[1]
-        //     << " " << particle.position[2] << std::endl;
         vertices.push_back(particle.position[0]);
         vertices.push_back(particle.position[1]);
         vertices.push_back(particle.position[2]);
@@ -93,13 +92,14 @@ void ParticleEffect::render_geometry()
         vertices.push_back(particle.color[2]);
         vertices.push_back(particle.color[3]);
     }
-    // std::cout << "pushed back" << std::endl;
 
-    GLint particle_size_location = glGetUniformLocation(program_id, "size");
+    GLint particle_size_location = glGetUniformLocation(fire_program_id, "size");
     TEST_OPENGL_ERROR();
     glUniform1f(particle_size_location, particles[0].size);
     // glUniform1f(particle_size_location, 5);
     TEST_OPENGL_ERROR();
+
+    glBindTexture(GL_TEXTURE_2D, texture_id);TEST_OPENGL_ERROR();
 
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
@@ -125,30 +125,16 @@ void ParticleEffect::render_geometry()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
     glDrawArrays(GL_POINTS, 0, vertices.size() / 7);TEST_OPENGL_ERROR();
+
     glDeleteBuffers(1, &VBO);
     glBindVertexArray(0);TEST_OPENGL_ERROR();
+    glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
     glDisable(GL_BLEND);
 }
 
 void ParticleEffect::resize(unsigned int n_particles)
 {
     particles.resize(n_particles);
-}
-
-
-// float random_range(int lower, int higher)
-// {
-//     return lower + (std::rand() % (higher - lower + 1));
-// }
-
-float random_range(float lower, float higher)
-{
-    return lower + static_cast<float>(rand()) * static_cast<float>(higher - lower) / static_cast<float>(RAND_MAX);
-}
-
-glm::vec3 random_vec()
-{
-    return glm::vec3(random_range(-1, 1), random_range(-1, 1), random_range(-1, 1));
 }
 
 void ParticleEffect::randomize(Particle &particle)
@@ -205,116 +191,24 @@ void ParticleEffect::disc_emit(Particle &particle, float radius)
     particle.color.r = 1.0, particle.color.g = 0.8, particle.color.b = 0.5;
 }
 
-float fclamp(float value, float lower, float higher)
-{
-    if (value < lower)
-        return lower;
-    if (value > higher)
-        return higher;
-    return value;
-}
-
-
-
-using limits = std::pair<float, float>;
-using zone = std::pair<limits, glm::vec3>;
-
-limits random_limits()
-{
-    float l1 = random_range(0, 1);
-    float l2 = random_range(0, 1);
-    return std::make_pair(std::min(l1, l2), std::max(l1, l2)); 
-}
-
-int respawned_particles = 0;
-int nb_update = 0;
-int max_wind_zones = 5;
-std::mt19937 e2(7); // gaussian random generator
-std::normal_distribution<> dist(0, 0.2);
-
-std::vector<zone> wind_zones;
 void ParticleEffect::update(float fDeltaTime)
 {
-    // std::cout << "nb_particles" << particles.size() << std::endl;
-    nb_update++;
-    int i = 0;
-    float wind_chances = 0.1;
-    bool add_wind = random_range(0, 1) < wind_chances; 
-    if (add_wind && wind_zones.size() < max_wind_zones)
-    {
-        glm::vec3 wind_dir = glm::vec3(dist(e2), dist(e2) / 5, dist(e2)) * 0.1f; // maybe only x and z
-        limits wind_lim = random_limits(); 
-        std::cout << "new wind ! low = " << wind_lim.first
-            << " high = " << wind_lim.second << std::endl;
-        wind_zones.push_back(std::make_pair(wind_lim, wind_dir));
-    }
-    bool remove_wind = random_range(0, 1) < wind_chances; 
-    if (remove_wind && wind_zones.size() != 0)
-    {
-        std::cout << "removed wind !" << std::endl;
-        int index = random_range(0, wind_zones.size());
-        wind_zones.erase(wind_zones.begin() + index);
-    }
-
     for (auto &particle : particles)
     {
         particle.age += fDeltaTime;
         if (particle.age >= particle.lifeTime)
         {
-            respawned_particles++;
-            disc_emit(particle, radius);
+            randomize(particle);
             continue;
         }
 
-        // shape of the flame
-        glm::vec3 center_dir = g_position - particle.position;
-        float distance_center = std::sqrt(std::pow(center_dir.x, 2) + std::pow(center_dir.z, 2));
+        float life_ratio = fclamp(particle.age / particle.lifeTime, 0, 1);
         particle.velocity += (force * fDeltaTime) ;
-        particle.lifeTime -= 0.001 * distance_center;
-
-        if ((nb_update + i) % 50 == 0)
-        {
-            float pertub_func_x = sinf(random_range(0.25f * M_PI, 0.75f * M_PI));
-            pertub_func_x *= (rand() % 2) * 2 - 1;
-            float pertub_func_z = sinf(random_range(0.25f * M_PI, 0.75f * M_PI));
-            pertub_func_z *= (rand() % 2) * 2 - 1;
-            glm::vec3 perturb_vec = glm::vec3(pertub_func_x, 0, pertub_func_z);
-            particle.velocity += (0.1f * perturb_vec);
-        }
-
-        for (auto &wind_zone : wind_zones)
-        {
-            // particle in wind_zone limits
-            limits wind_limits = wind_zone.first;
-            float life_ratio = particle.age / particle.lifeTime;
-            if (life_ratio > wind_limits.first && life_ratio < wind_limits.second)
-            {
-                particle.velocity += wind_zone.second;
-            }
-        }
-
         particle.position += (particle.velocity * fDeltaTime);
         particle.color.x = 1 * (particle.lifeTime - (particle.age / 2)) / particle.lifeTime; // to fix - experiment
         particle.color.y = 0.8 * (particle.lifeTime - particle.age) / particle.lifeTime; // to fix - experiment
         particle.color.z = 0.5 * (particle.lifeTime - particle.age) / particle.lifeTime; // to fix - experiment
-        // particle.size = glm::lerp<float>(5.0f, 5.0f, life_ratio);
-        particle.size = 5; 
-        i++;
-    }
-    // std::cout << "remaining_particles = " << remaining_particles
-    //           << "respawned_particles = " << respawned_particles
-    //           << " .size()= " << particles.size()
-    //           << std::endl;
-    if (remaining_particles > 0)
-    {
-        float needed_updates = mean_lifetime / fDeltaTime; 
-        int spawning_particles = round(n_particles / needed_updates);
-        int spawned_particles = n_particles - remaining_particles;
-        resize(spawned_particles + spawning_particles);
-        for (size_t i = 0; i < spawning_particles; i++)
-        {
-            disc_emit(particles[spawned_particles + i], radius);
-        }
-        remaining_particles -= spawning_particles;
+        particle.size = glm::lerp<float>(5.0f, 0.1f, life_ratio);
+        // particle.size = 5; 
     }
 }

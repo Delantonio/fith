@@ -2,6 +2,7 @@
 
 #include "particle.hh"
 #include "program.hh"
+#include "random.hh"
 
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -10,42 +11,23 @@
 #include <string>
 #include <ctime>
 #include <cmath>
-#include <cstdlib>
-#include <algorithm>
 #include <random>
 
-struct Vertex
-{
-    Vertex()
-        : position(0), diffuse(0), uv(0)
-    {}
-    Vertex(glm::vec3 position, glm::vec3 diffuse, glm::vec2 uv)
-        : position(position), diffuse(diffuse), uv(uv)
-    {}
-
-    glm::vec3 position;
-    glm::vec3 diffuse;
-    glm::vec2 uv;
-};
+using zone = std::pair<limits, glm::vec3>;
 
 class ParticleEffect
 {
     public:
-        ParticleEffect(unsigned int nb_particles = 0);
+        ParticleEffect(glm::vec3 position, unsigned int nb_particles = 0);
         virtual ~ParticleEffect();
 
         virtual void update(float fDeltaTime);
-        //virtual void render();
-        // virtual void render(std::vector<Vertex> &vertices);
-        // virtual void render(std::vector<GLfloat> &vertices);
-        virtual void render_geometry();
+        void render();
 
         void randomize();
         void emit();
 
-        bool load_texture(const std::string &filename, const std::string &tex_variable, GLuint &texture_id, GLint uniform_index);
-        // std::vector<Vertex> build_vertices();
-        // std::vector<GLfloat> gl_build_vertices();
+        bool load_texture(GLuint &program_id, const std::string &filename, const std::string &tex_variable, GLuint &texture_id, GLint uniform_index);
 
         void resize(unsigned int n_particles);
 
@@ -60,11 +42,11 @@ class ParticleEffect
         unsigned int n_particles;
         std::vector<Particle> particles;
         int remaining_particles;
-        glm::mat4 local_to_world;
-        GLuint texture_id;
         glm::vec3 force;
         glm::vec3 g_position; // global position
         float mean_lifetime = 6.5;
         float lifetime_deviation = 0;
-        float radius = 10.0;
+        // float radius = 10.0;
+    private:
+        GLuint texture_id;
 };
