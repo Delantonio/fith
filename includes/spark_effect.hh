@@ -4,16 +4,16 @@
 
 class SparkEffect : public ParticleEffect
 {
-    public:
-        SparkEffect(glm::vec3 position, unsigned int nb_particles, float radius, unsigned int max_wind_zones);
-        void update(float fDeltaTime);
+public:
+    SparkEffect(glm::vec3 position, unsigned int nb_particles, float height,
+                float radius);
+    void update();
 
-    public:
-        float radius;
-        unsigned int max_wind_zones;
-    protected:
-        int respawned_particles = 0;
-        int nb_update = 0;
-        std::mt19937 e2; // gaussian random generator
-        std::normal_distribution<> dist;
+protected:
+    void effect_update(Particle &particle) override;
+    void emit(Particle &particle) override;
+
+public:
+    float height;
+    int respawned_particles = 0;
 };

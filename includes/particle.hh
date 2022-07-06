@@ -5,20 +5,35 @@
 
 struct Particle
 {
-    public:
-        Particle()
-            : position(glm::vec3(0, 0, 0)), velocity(0), color(0.5), size(1), age(0), lifeTime(0)
-        {}
-        Particle(glm::vec3 position, glm::vec3 velocity, glm::vec4 color, float size, float age, float lifeTime)
-            : position(position), velocity(velocity), color(color), size(size), age(age), lifeTime(lifeTime)
-        {}
+public:
+    Particle()
+        : position(0)
+        , velocity(0)
+        , force(0)
+        , color(0.5)
+        , size(1)
+        , age(0)
+        , lifeTime(0)
+    {}
 
-    public:
-        glm::vec3 position;
-        glm::vec3 velocity;
-        glm::vec4 color;
+    Particle(glm::vec3 position, glm::vec3 velocity, glm::vec3 force,
+             glm::vec4 color, float size, float age, float lifeTime)
+        : position(position)
+        , velocity(velocity)
+        , force(force)
+        , color(color)
+        , size(size)
+        , age(age)
+        , lifeTime(lifeTime)
+    {}
 
-        float size;
-        float age;
-        float lifeTime;
+public:
+    glm::vec3 position;
+    glm::vec3 velocity;
+    glm::vec3 force;
+    glm::vec4 color;
+
+    float size;
+    float age;
+    float lifeTime;
 };

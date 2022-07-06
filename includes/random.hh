@@ -9,7 +9,7 @@ using limits = std::pair<float, float>;
 
 // Random utils
 float random_range(float lower, float higher);
-limits random_limits();
+limits random_limits(float min_height, float max_height);
 glm::vec3 random_vec();
 
 // Utils

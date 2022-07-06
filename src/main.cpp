@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "fire_effect.hh"
-#include "smoke_effect.hh"
+#include "particle_effect.hh"
 #include "program.hh"
 #include "obj_loader.hh"
 #include "image.hh"
@@ -15,14 +15,13 @@
 
 int vertices_size;
 float elapsed_time = 0.0f;
-float delta_time = 0.033333f;
+float ParticleEffect::fDeltaTime = 0.033333f;
+
 extern GLuint fire_program_id = 0;
 extern GLuint object_program_id = 0;
 
-// FireEffect(position, nb_particles, radius, max_wind_zones)
-FireEffect flame_particle_effect({0, -30, 50}, 2000, 10.0f, 5);
-
-SmokeEffect smoke_particle_effect({0, -30, 50}, 200, 8.0f, 5);
+// FireEffect(position, nb_particles, height, radius, max_wind_zones)
+FireEffect fire_effect({0, -3, 5}, 3000, 9.0f, 1.0f, 5);
 
 int display_count = 0;
 
@@ -35,8 +34,7 @@ void display()
 
         // Draw particle
         glUseProgram(fire_program_id);
-        smoke_particle_effect.render();
-        flame_particle_effect.render();
+        fire_effect.render();
 
         // Draw scene
         // glUseProgram(object_program_id);
@@ -46,14 +44,15 @@ void display()
         glutPostRedisplay();TEST_OPENGL_ERROR();
     }
 }
+
 void idle()
 {
     if (elapsed_time < 0.03f)
         std::cout << "update !" << std::endl;
-    elapsed_time += delta_time;
-    flame_particle_effect.update(delta_time);
-    smoke_particle_effect.update(delta_time);
+    elapsed_time += ParticleEffect::fDeltaTime;
+    fire_effect.update();
 }
+
 void window_resize(int width, int height)
 {
     glViewport(0, 0, width, height); // TEST_OPENGL_ERROR();
@@ -73,10 +72,12 @@ bool init_glut(int &argc, char *argv[])
     glutReshapeFunc(window_resize);
     return true;
 }
+
 bool init_glew()
 {
     return (glewInit()==GLEW_OK);
 }
+
 bool init_gl()
 {
     glEnable(GL_DEPTH_TEST);TEST_OPENGL_ERROR();
@@ -126,11 +127,7 @@ bool init_object_vbo()
     // }
     // vertices_size = indices.size();
 
-    GLuint texture1;
-    GLuint texture2;
-    flame_particle_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", texture1, 0);
-    smoke_particle_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", texture2, 0);
-
+    fire_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", 0);
     // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);TEST_OPENGL_ERROR();
 
     // unsigned int VBO, VAO, EBO;

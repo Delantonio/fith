@@ -1,16 +1,16 @@
 #pragma once
 
+#include "particle.hh"
 #include "particle_effect.hh"
 
-class SmokeEffect : public ParticleEffect
+class FlameEffect : public ParticleEffect
 {
 public:
-    SmokeEffect(glm::vec3 position, unsigned int nb_particles, float height,
+    FlameEffect(glm::vec3 position, unsigned int nb_particles, float height,
                 float radius);
     void update();
 
 protected:
-    glm::vec3 force() override;
     void effect_update(Particle &particle) override;
     void emit(Particle &particle) override;
 

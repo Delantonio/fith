@@ -1,102 +1,104 @@
 #include "fire_effect.hh"
 
-std::vector<zone> fire_wind_zones;
+#include <cmath>
+#include <random>
 
-FireEffect::FireEffect(glm::vec3 position,
-                       unsigned int nb_particles,
-                       float radius,
-                       unsigned int max_wind_zones)
-    : ParticleEffect(position, nb_particles)
-    , radius(radius)
+float delta_30_fps = 0.033333f;
+float max_wind_delay = 0.3f;
+
+FireEffect::FireEffect(glm::vec3 position, unsigned int nb_particles,
+                       float height, float radius, unsigned int max_wind_zones)
+    : ParticleEffect(position, radius, nb_particles)
+    , height(height)
     , max_wind_zones(max_wind_zones)
 {
-    force = glm::vec3(0, 2, 0); // Fire particles elevation
-    e2 = std::mt19937(7); // gaussian random generator
-    dist = std::normal_distribution<>(0, 0.2);
+    dist = std::normal_distribution<>(0, 0.75);
+    int flame_particles = std::round(7.5 * nb_particles / 10) - 10;
+    int smoke_particles = std::round(2.5 * nb_particles / 10);
+    int spark_particles = 10;
+    flame_effect = std::make_unique<FlameEffect>(position, flame_particles,
+                                                 3.75 * height / 8, radius);
+    smoke_effect = std::make_unique<SmokeEffect>(position, smoke_particles,
+                                                 6 * height / 8, radius * 0.9f);
+    spark_effect = std::make_unique<SparkEffect>(position, spark_particles,
+                                                 height, radius);
 }
 
-void FireEffect::update(float fDeltaTime)
+void FireEffect::render()
 {
-    // std::cout << "nb_particles" << particles.size() << std::endl;
-    nb_update++;
-    int i = 0;
-    float wind_chances = 0.1;
-    bool add_wind = random_range(0, 1) < wind_chances; 
-    if (add_wind && fire_wind_zones.size() < max_wind_zones)
+    flame_effect->render();
+    smoke_effect->render();
+    spark_effect->render();
+}
+
+bool FireEffect::load_texture(GLuint &program_id, const std::string &filename,
+                              const std::string &tex_variable,
+                              GLint uniform_index)
+{
+    bool flame_result = flame_effect->load_texture(program_id, filename,
+                                                   tex_variable, uniform_index);
+    bool smoke_result = smoke_effect->load_texture(program_id, filename,
+                                                   tex_variable, uniform_index);
+    bool spark_result = spark_effect->load_texture(program_id, filename,
+                                                   tex_variable, uniform_index);
+    return flame_result && smoke_result && spark_result;
+}
+
+void FireEffect::update_wind_zones()
+{
+    for (auto &wind_zone : wind_zones)
+        wind_zone.age += fDeltaTime;
+
+    float wind_chances = 0.01 * (fDeltaTime / delta_30_fps);
+    bool add_wind = random_range(0, 1) < wind_chances;
+    if (add_wind && wind_zones.size() < max_wind_zones)
     {
-        glm::vec3 wind_dir = glm::vec3(dist(e2), dist(e2) / 5, dist(e2)) * 0.1f; // maybe only x and z
-        limits wind_lim = random_limits(); 
-        std::cout << "new wind ! low = " << wind_lim.first
-            << " high = " << wind_lim.second << std::endl;
-        fire_wind_zones.push_back(std::make_pair(wind_lim, wind_dir));
-    }
-    bool remove_wind = random_range(0, 1) < wind_chances; 
-    if (remove_wind && fire_wind_zones.size() != 0)
-    {
-        std::cout << "removed wind !" << std::endl;
-        int index = random_range(0, fire_wind_zones.size());
-        fire_wind_zones.erase(fire_wind_zones.begin() + index);
+        glm::vec3 wind_dir = glm::vec3(dist(e2), dist(e2) / 5, dist(e2)) * 0.1f;
+        limits wind_lim = random_limits(0, height);
+        wind_zones.push_back(zone{ wind_lim, wind_dir, 0. });
     }
 
+    bool remove_wind = random_range(0, 1) < wind_chances;
+    if (remove_wind && wind_zones.size() != 0)
+    {
+        int index = random_range(0, wind_zones.size());
+        if (wind_zones[index].age > max_wind_delay + fDeltaTime)
+            wind_zones.erase(wind_zones.begin() + index);
+    }
+}
+
+void FireEffect::apply_wind_forces(std::vector<Particle> &particles,
+                                   float wind_delay)
+{
     for (auto &particle : particles)
     {
-        particle.age += fDeltaTime;
-        if (particle.age >= particle.lifeTime)
+        for (auto &wind_zone : wind_zones)
         {
-            respawned_particles++;
-            disc_emit(particle, radius);
-            continue;
-        }
+            if (wind_zone.age < wind_delay)
+                continue;
 
-        // shape of the flame
-        glm::vec3 center_dir = g_position - particle.position;
-        float distance_center = std::sqrt(std::pow(center_dir.x, 2) + std::pow(center_dir.z, 2));
-        particle.velocity += (force * fDeltaTime) ;
-        particle.lifeTime -= 0.001 * distance_center;
-
-        if ((nb_update + i) % 50 == 0)
-        {
-            float pertub_func_x = sinf(random_range(0.25f * M_PI, 0.75f * M_PI));
-            pertub_func_x *= (rand() % 2) * 2 - 1;
-            float pertub_func_z = sinf(random_range(0.25f * M_PI, 0.75f * M_PI));
-            pertub_func_z *= (rand() % 2) * 2 - 1;
-            glm::vec3 perturb_vec = glm::vec3(pertub_func_x, 0, pertub_func_z);
-            particle.velocity += (0.1f * perturb_vec);
-        }
-
-        for (auto &wind_zone : fire_wind_zones)
-        {
-            // particle in wind_zone limits
-            limits wind_limits = wind_zone.first;
-            float life_ratio = particle.age / particle.lifeTime;
-            if (life_ratio > wind_limits.first && life_ratio < wind_limits.second)
+            float lower = g_position.y + wind_zone.wind_limits.first;
+            float upper = g_position.y + wind_zone.wind_limits.second;
+            if (particle.position.y > lower && particle.position.y < upper)
             {
-                particle.velocity += wind_zone.second;
+                float wind_factor =
+                    (fDeltaTime / delta_30_fps) * (radius / 10.0f) * 3;
+                particle.velocity += wind_zone.wind_force * wind_factor;
             }
         }
+    }
+}
 
-        particle.position += (particle.velocity * fDeltaTime);
-        particle.color.x = 1 * (particle.lifeTime - (particle.age / 2)) / particle.lifeTime; // to fix - experiment
-        particle.color.y = 0.8 * (particle.lifeTime - particle.age) / particle.lifeTime; // to fix - experiment
-        particle.color.z = 0.5 * (particle.lifeTime - particle.age) / particle.lifeTime; // to fix - experiment
-        // particle.size = glm::lerp<float>(5.0f, 5.0f, life_ratio);
-        particle.size = 5; 
-        i++;
-    }
-    // std::cout << "remaining_particles = " << remaining_particles
-    //           << "respawned_particles = " << respawned_particles
-    //           << " .size()= " << particles.size()
-    //           << std::endl;
-    if (remaining_particles > 0)
-    {
-        float needed_updates = mean_lifetime / fDeltaTime; 
-        int spawning_particles = round(n_particles / needed_updates);
-        int spawned_particles = n_particles - remaining_particles;
-        resize(spawned_particles + spawning_particles);
-        for (size_t i = 0; i < spawning_particles; i++)
-        {
-            disc_emit(particles[spawned_particles + i], radius);
-        }
-        remaining_particles -= spawning_particles;
-    }
+void FireEffect::update()
+{
+    nb_update++;
+    update_wind_zones();
+
+    apply_wind_forces(flame_effect->particles, max_wind_delay);
+    apply_wind_forces(smoke_effect->particles, 0.0f);
+    apply_wind_forces(spark_effect->particles, 0.0f);
+
+    flame_effect->update();
+    smoke_effect->update();
+    spark_effect->update();
 }

@@ -1,52 +1,55 @@
 #pragma once
 
+#include <cmath>
+#include <ctime>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <random>
+#include <string>
+#include <vector>
+
 #include "particle.hh"
 #include "program.hh"
 #include "random.hh"
 
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/norm.hpp>
-#include <vector>
-#include <string>
-#include <ctime>
-#include <cmath>
-#include <random>
-
-using zone = std::pair<limits, glm::vec3>;
-
 class ParticleEffect
 {
-    public:
-        ParticleEffect(glm::vec3 position, unsigned int nb_particles = 0);
-        virtual ~ParticleEffect();
+public:
+    ParticleEffect(glm::vec3 position, float radius,
+                   unsigned int nb_particles = 0);
+    virtual ~ParticleEffect();
 
-        virtual void update(float fDeltaTime);
-        void render();
+    void update();
+    void render();
 
-        void randomize();
-        void emit();
+    bool load_texture(GLuint &program_id, const std::string &filename,
+                      const std::string &tex_variable, GLint uniform_index);
+    void resize(unsigned int n_particles);
 
-        bool load_texture(GLuint &program_id, const std::string &filename, const std::string &tex_variable, GLuint &texture_id, GLint uniform_index);
+protected:
+    virtual glm::vec3 force();
+    virtual void effect_update(Particle &particle) {};
 
-        void resize(unsigned int n_particles);
+    virtual void emit(Particle &particle) {};
+    void sphere_emit(Particle &particle);
+    void disc_emit(Particle &particle);
 
-    protected:
-        void randomize(Particle &particle);
-        void emit(Particle &particle);
+public:
+    glm::vec3 g_position;
+    unsigned int n_particles;
+    std::vector<Particle> particles;
+    float radius;
+    int remaining_particles;
 
-        void sphere_emit(Particle &particle);
-        void disc_emit(Particle &particle, float radius);
+    glm::vec3 mean_force = glm::vec3(0, -9.81, 0);
+    glm::vec3 force_deviation = glm::vec3(0, 0, 0);
+    int nb_update = 0;
+    float mean_lifetime = 6.5;
+    float lifetime_deviation = 1.0;
+    float particle_size = 5.0;
+    static float fDeltaTime;
 
-    public:
-        unsigned int n_particles;
-        std::vector<Particle> particles;
-        int remaining_particles;
-        glm::vec3 force;
-        glm::vec3 g_position; // global position
-        float mean_lifetime = 6.5;
-        float lifetime_deviation = 0;
-        // float radius = 10.0;
-    private:
-        GLuint texture_id;
+private:
+    GLuint texture_id;
 };
