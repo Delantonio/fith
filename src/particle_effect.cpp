@@ -9,6 +9,7 @@
 #include <utility>
 #include "image_io.hh"
 #include "particle.hh"
+#include "program.hh"
 
 
 ParticleEffect::ParticleEffect(glm::vec3 position, unsigned int nb_particles)
@@ -54,13 +55,22 @@ bool ParticleEffect::load_texture(GLuint &program_id, const std::string &filenam
     if (texture == 0)
         return false;
 
+    GLint fire_shader_nb = 0;
+    GLint obj_shader_nb = 0;
+    glGetProgramiv(fire_program_id, GL_ATTACHED_SHADERS, &fire_shader_nb);
+    glGetProgramiv(object_program_id, GL_ATTACHED_SHADERS, &obj_shader_nb);
+    std::cout << "begin load nb fire = " << fire_shader_nb << std::endl;
+    std::cout << "begin load nb obj = " << obj_shader_nb << std::endl;
 
     GLint tex_location;
     glGenTextures(1, &new_texture_id);TEST_OPENGL_ERROR();
     glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D,new_texture_id);TEST_OPENGL_ERROR();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);TEST_OPENGL_ERROR();
+
+    glUseProgram(program_id);
     tex_location = glGetUniformLocation(program_id, tex_variable.c_str());TEST_OPENGL_ERROR();
+    std::cout << "load_texture -> " << program_id << std::endl;
     glUniform1i(tex_location, uniform_index);TEST_OPENGL_ERROR();
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);TEST_OPENGL_ERROR();
@@ -68,9 +78,16 @@ bool ParticleEffect::load_texture(GLuint &program_id, const std::string &filenam
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);TEST_OPENGL_ERROR();
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
 
     texture_id = new_texture_id;
+
+    GLint fire_shader_nb2 = 0;
+    GLint obj_shader_nb2 = 0;
+    glGetProgramiv(fire_program_id, GL_ATTACHED_SHADERS, &fire_shader_nb2);TEST_OPENGL_ERROR();
+    glGetProgramiv(object_program_id, GL_ATTACHED_SHADERS, &obj_shader_nb2);TEST_OPENGL_ERROR();
+    std::cout << "end load nb fire = " << fire_shader_nb2 << std::endl;
+    std::cout << "end load nb obj = " << obj_shader_nb2 << std::endl;
 
     // delete texture;
     stbi_image_free(texture);
@@ -79,6 +96,7 @@ bool ParticleEffect::load_texture(GLuint &program_id, const std::string &filenam
 
 void ParticleEffect::render()
 { 
+    // std::cout << "render , particles.size = " << particles.size() << std::endl;
     if (!particles.size())
         return;
     std::vector<GLfloat> vertices;
@@ -130,6 +148,7 @@ void ParticleEffect::render()
     glBindVertexArray(0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
     glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
 }
 
 void ParticleEffect::resize(unsigned int n_particles)

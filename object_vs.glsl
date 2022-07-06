@@ -19,6 +19,7 @@ void main() {
     gl_Position = projection_matrix * model_view_matrix * vec4(position, 1.0f); 
     vec3 normal = normalize(normals) ;
     vec3 light_dir = normalize(light_pos - position);
+    /* out_color = clamp( dot(normal, light_dir) * color, 0, 1); */
     out_color = clamp( dot(normal, light_dir) * color, 0, 1);
     uv_coord = uv;
 }

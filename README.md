@@ -5,9 +5,14 @@ Fire in the howl !
 
 *AUTHORS:* Antoine Delattre, Pierre Seguin
 
-*Compiling:*  
+*Generate a compiling profile*
     meson setup --buildtype=release build // --buildtype=debug for debug  
+
+*Compile:*  
     meson compile -C build  
+
+*Execute:*
+    build/render
     
 *Dependencies:*  
     - OpenGL  

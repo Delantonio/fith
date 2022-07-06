@@ -26,14 +26,11 @@ void FireEffect::update(float fDeltaTime)
     {
         glm::vec3 wind_dir = glm::vec3(dist(e2), dist(e2) / 5, dist(e2)) * 0.1f; // maybe only x and z
         limits wind_lim = random_limits(); 
-        std::cout << "new wind ! low = " << wind_lim.first
-            << " high = " << wind_lim.second << std::endl;
         fire_wind_zones.push_back(std::make_pair(wind_lim, wind_dir));
     }
     bool remove_wind = random_range(0, 1) < wind_chances; 
     if (remove_wind && fire_wind_zones.size() != 0)
     {
-        std::cout << "removed wind !" << std::endl;
         int index = random_range(0, fire_wind_zones.size());
         fire_wind_zones.erase(fire_wind_zones.begin() + index);
     }
