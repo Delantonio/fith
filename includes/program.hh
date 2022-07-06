@@ -29,7 +29,7 @@ class program
         program(program &&prog);
         static std::unique_ptr<program> make_program(std::string &vertex_shader, std::string &fragment_shader, std::string &geometry_shader);
         static std::unique_ptr<program> make_program(std::string &vertex_src, std::string &fragment_src);
-        bool get_log(GLuint shader_id[]);
+        bool get_log(GLuint shader_id[], int nb);
         bool is_ready();
         void use();
 

@@ -12,6 +12,7 @@
 #include "image_io.hh"
 #include "particle.hh"
 #include "random.hh"
+#include "program.hh"
 
 ParticleEffect::ParticleEffect(glm::vec3 position, float radius,
                                unsigned int nb_particles)
@@ -48,20 +49,17 @@ bool ParticleEffect::load_texture(GLuint &program_id,
         return false;
 
     GLuint new_texture_id;
+
     GLint tex_location;
-    glGenTextures(1, &new_texture_id);
-    TEST_OPENGL_ERROR();
-    glActiveTexture(GL_TEXTURE0);
-    TEST_OPENGL_ERROR();
-    glBindTexture(GL_TEXTURE_2D, new_texture_id);
-    TEST_OPENGL_ERROR();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, texture);
-    TEST_OPENGL_ERROR();
-    tex_location = glGetUniformLocation(program_id, tex_variable.c_str());
-    TEST_OPENGL_ERROR();
-    glUniform1i(tex_location, uniform_index);
-    TEST_OPENGL_ERROR();
+    glGenTextures(1, &new_texture_id);TEST_OPENGL_ERROR();
+    glActiveTexture(GL_TEXTURE0);TEST_OPENGL_ERROR();
+    glBindTexture(GL_TEXTURE_2D,new_texture_id);TEST_OPENGL_ERROR();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);TEST_OPENGL_ERROR();
+
+    glUseProgram(program_id);
+    tex_location = glGetUniformLocation(program_id, tex_variable.c_str());TEST_OPENGL_ERROR();
+    std::cout << "load_texture -> " << program_id << std::endl;
+    glUniform1i(tex_location, uniform_index);TEST_OPENGL_ERROR();
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     TEST_OPENGL_ERROR();
@@ -72,7 +70,8 @@ bool ParticleEffect::load_texture(GLuint &program_id,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     TEST_OPENGL_ERROR();
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
+
     texture_id = new_texture_id;
 
     // delete texture;
@@ -81,7 +80,7 @@ bool ParticleEffect::load_texture(GLuint &program_id,
 }
 
 void ParticleEffect::render()
-{
+{ 
     if (!particles.size())
         return;
     std::vector<GLfloat> vertices;
@@ -147,6 +146,7 @@ void ParticleEffect::render()
     glBindTexture(GL_TEXTURE_2D, 0);
     TEST_OPENGL_ERROR();
     glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
 }
 
 void ParticleEffect::resize(unsigned int n_particles)

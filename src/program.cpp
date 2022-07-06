@@ -22,8 +22,9 @@ program::program()
 }
 program::~program()
 {
-    glDeleteProgram(program_id);TEST_OPENGL_ERROR();
-    program_id = 0;
+    std::cout << "program delete - id = " << program_id << std::endl;
+    // glDeleteProgram(program_id);TEST_OPENGL_ERROR();
+    // program_id = 0;
 }
 std::unique_ptr<program> program::make_program(std::string &vertex_src,
                              std::string &fragment_src)
@@ -52,7 +53,7 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
     std::cout << "done" << std::endl;
     
     std::cout << "logging..." << std::endl;
-    if (!prog->get_log(shader_id))
+    if (!prog->get_log(shader_id, 2))
         return nullptr;
     std::cout << "done" << std::endl;
     std::free(vertex_shd_src);
@@ -66,6 +67,7 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
     std::cout << "attaching..." << std::endl;
     for(int i = 0 ; i < 2 ; i++) {
         glAttachShader(prog->program_id, shader_id[i]);TEST_OPENGL_ERROR();
+        std::cout << i << " shader_id" << shader_id[i] << std::endl;
     }
     std::cout << "done" << std::endl;
     std::cout << "linking..." << std::endl;
@@ -76,11 +78,8 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
 
     glDeleteShader(shader_id[0]);TEST_OPENGL_ERROR();
     glDeleteShader(shader_id[1]);TEST_OPENGL_ERROR();
-    if (prog->link_status != GL_TRUE && !prog->get_log(shader_id))
-    {
-        std::cerr << "failed to make program" << std::endl;
+    if (prog->link_status != GL_TRUE && !prog->get_log(shader_id, 2))
         return nullptr;
-    }
 
     return prog;
 }
@@ -122,7 +121,7 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
     std::cout << "done" << std::endl;
     
     std::cout << "logging..." << std::endl;
-    if (!prog->get_log(shader_id))
+    if (!prog->get_log(shader_id, 3))
         return nullptr;
     std::cout << "done" << std::endl;
     std::free(vertex_shd_src);
@@ -130,6 +129,7 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
     std::free(geometry_shd_src);
 
     prog->program_id=glCreateProgram();TEST_OPENGL_ERROR();
+    std::cout << "prog->program_id = " << prog->program_id << std::endl;
     if (prog->program_id==0) 
         return nullptr;
 
@@ -147,17 +147,17 @@ std::unique_ptr<program> program::make_program(std::string &vertex_src,
     glDeleteShader(shader_id[0]);TEST_OPENGL_ERROR();
     glDeleteShader(shader_id[1]);TEST_OPENGL_ERROR();
     glDeleteShader(shader_id[2]);TEST_OPENGL_ERROR();
-    if (prog->link_status != GL_TRUE && !prog->get_log(shader_id))
+    if (prog->link_status != GL_TRUE && !prog->get_log(shader_id, 3))
         return nullptr;
 
     return prog;
 }
-bool program::get_log(GLuint shader_id[])
+bool program::get_log(GLuint shader_id[], int nb)
 {
     /*
         renvoie log compilation ou edition de liens
     */
-    for(int i = 0 ; i < 3 ; i++) {
+    for(int i = 0 ; i < nb ; i++) {
         glGetShaderiv(shader_id[i], GL_COMPILE_STATUS, &compile_status);
         if(compile_status != GL_TRUE) {
             GLint log_size;
