@@ -18,6 +18,7 @@ do {									\
 
 extern GLuint fire_program_id;
 extern GLuint object_program_id; 
+extern unsigned int particles_VAO; 
 
 std::string load(const std::string &filename);
 

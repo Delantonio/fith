@@ -108,43 +108,30 @@ void ParticleEffect::render()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    TEST_OPENGL_ERROR();
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    TEST_OPENGL_ERROR();
+    glBindVertexArray(particles_VAO);TEST_OPENGL_ERROR();
 
-    glBindVertexArray(VAO);
-    TEST_OPENGL_ERROR();
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    TEST_OPENGL_ERROR();
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
 
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat),
-                 vertices.data(), GL_STATIC_DRAW);
-    TEST_OPENGL_ERROR();
+                 vertices.data(), GL_STATIC_DRAW);TEST_OPENGL_ERROR();
 
-    glEnableVertexAttribArray(0);
-    TEST_OPENGL_ERROR();
+    glEnableVertexAttribArray(0);TEST_OPENGL_ERROR();
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat),
-                          (void *)0);
-    TEST_OPENGL_ERROR();
+                          (void *)0);TEST_OPENGL_ERROR();
 
-    glEnableVertexAttribArray(1);
-    TEST_OPENGL_ERROR();
+    glEnableVertexAttribArray(1);TEST_OPENGL_ERROR();
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float),
                           (void *)(3 * sizeof(float)));
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    TEST_OPENGL_ERROR();
-    glDrawArrays(GL_POINTS, 0, vertices.size() / 7);
-    TEST_OPENGL_ERROR();
+    glBindBuffer(GL_ARRAY_BUFFER, 0);TEST_OPENGL_ERROR();
+    glDrawArrays(GL_POINTS, 0, vertices.size() / 7);TEST_OPENGL_ERROR();
 
     glDeleteBuffers(1, &VBO);
-    glBindVertexArray(0);
-    TEST_OPENGL_ERROR();
-    glBindTexture(GL_TEXTURE_2D, 0);
-    TEST_OPENGL_ERROR();
+    glBindVertexArray(0);TEST_OPENGL_ERROR();
+    glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
     glDisable(GL_BLEND);
     glDepthMask(GL_TRUE);
 }

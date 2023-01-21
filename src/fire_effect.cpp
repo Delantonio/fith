@@ -15,7 +15,7 @@ FireEffect::FireEffect(glm::vec3 position, unsigned int nb_particles,
     dist = std::normal_distribution<>(0, 0.75);
     int flame_particles = std::round(7.5 * nb_particles / 10) - 10;
     int smoke_particles = std::round(2.5 * nb_particles / 10);
-    int spark_particles = 10;
+    int spark_particles = 15;
     flame_effect = std::make_unique<FlameEffect>(position, flame_particles,
                                                  3.75 * height / 8, radius);
     smoke_effect = std::make_unique<SmokeEffect>(position, smoke_particles,
@@ -49,7 +49,7 @@ void FireEffect::update_wind_zones()
     for (auto &wind_zone : wind_zones)
         wind_zone.age += fDeltaTime;
 
-    float wind_chances = 0.01 * (fDeltaTime / delta_30_fps);
+    float wind_chances = 0.02 * (fDeltaTime / delta_30_fps);
     bool add_wind = random_range(0, 1) < wind_chances;
     if (add_wind && wind_zones.size() < max_wind_zones)
     {

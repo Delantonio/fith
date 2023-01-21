@@ -31,6 +31,9 @@ std::vector<GLuint> indices;
 GLuint scene_texture_id;
 void DrawScene();
 
+unsigned int scene_VAO;
+unsigned int particles_VAO = 0;
+
 int display_count = 0;
 void display()
 {
@@ -72,7 +75,7 @@ bool init_glut(int &argc, char *argv[])
     glutInitContextVersion(4, 5);
     glutInitContextProfile(GLUT_CORE_PROFILE | GLUT_DEBUG);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(1024, 1024);
+    glutInitWindowSize(1080, 1080);
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Fire In The Howl - OpenGL");
     glutDisplayFunc(display);
@@ -91,7 +94,7 @@ bool init_gl()
     glEnable(GL_DEPTH_TEST);TEST_OPENGL_ERROR();
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);TEST_OPENGL_ERROR();
     // glEnable(GL_CULL_FACE);TEST_OPENGL_ERROR();
-    glClearColor(0.3,0.2,0.5,1.0);TEST_OPENGL_ERROR();
+    glClearColor(17.0 / 255.0 ,17.0 / 255.0 ,58.0 / 255.0 ,1.0);TEST_OPENGL_ERROR();
     return 1;
 }
 
@@ -204,13 +207,16 @@ bool init_object_vbo()
 
     fire_effect.load_texture(fire_program_id, "textures/white_glow_tr.tga", "particle_texture0", 0);
 
+    glGenVertexArrays(1, &scene_VAO);TEST_OPENGL_ERROR();
+    glGenVertexArrays(1, &particles_VAO);TEST_OPENGL_ERROR();
+
     return true;
 }
 
 bool init_POV()
 {
     matrix4 id = matrix4::identity();
-    matrix4 model_view = id.look_at(0, 0, -5, 0, 0, 1, 0, 1, 0);
+    matrix4 model_view = id.look_at(0, 0, -3, 0, 0, 1, 0, 1, 0);
     // matrix4 proj = id.frustum(-1.0, 1.0, -1.0, 1.0, 1, 1000);
     glm::mat4 mProjection = glm::perspective(glm::radians(90.0f), 1.0f, 1.0f, 1000.0f);
 
@@ -234,20 +240,15 @@ bool init_POV()
     std::cout << "projection " << object_proj_loc << std::endl;
     glUniformMatrix4fv(object_proj_loc, 1, GL_FALSE, glm::value_ptr(mProjection));TEST_OPENGL_ERROR();
 
-    // Set uniforms
-    GLint color = glGetUniformLocation(object_program_id, "color");TEST_OPENGL_ERROR();
-    const GLfloat frag_color[] = { 0.5, 0.5, 0.5 };
-    std::cout << "color " << color << std::endl;
-    glUniform3fv(color, 1, frag_color);TEST_OPENGL_ERROR();
-
     GLint light_pos = glGetUniformLocation(object_program_id, "light_pos");TEST_OPENGL_ERROR();
     // const GLfloat light_position[] = { 1.0, 4.0, -3.0 }; // top right - no depth
     std::cout << "light_pos " << light_pos << std::endl;
     // glUniform3fv(light_pos, 1, light_position);TEST_OPENGL_ERROR();
-    glUniform3fv(light_pos, 1, glm::value_ptr(fire_effect.g_position + glm::vec3(0, 30, 0)));TEST_OPENGL_ERROR();
+    // glUniform3fv(light_pos, 1, glm::value_ptr(fire_effect.g_position + glm::vec3(0, fire_effect.height, 0)));TEST_OPENGL_ERROR();
+    glUniform3fv(light_pos, 1, glm::value_ptr(fire_effect.g_position + glm::vec3(0, 0.8f, 0)));TEST_OPENGL_ERROR();
 
     GLint light_color = glGetUniformLocation(object_program_id, "light_color");TEST_OPENGL_ERROR();
-    const GLfloat light_rgb[] = { 1.0, 1.0, 1.0 }; // white light
+    const GLfloat light_rgb[] = { 1.0, 0.8, 0.5 }; // white light
     std::cout << "light_color " << light_color << std::endl;
     glUniform3fv(light_color, 1, light_rgb);TEST_OPENGL_ERROR();
 
@@ -330,12 +331,12 @@ void DrawScene()
 {
     glBindTexture(GL_TEXTURE_2D, scene_texture_id);TEST_OPENGL_ERROR();
 
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);TEST_OPENGL_ERROR();
+    glBindVertexArray(scene_VAO);TEST_OPENGL_ERROR();
+
+    unsigned int VBO, EBO;
     glGenBuffers(1, &VBO);TEST_OPENGL_ERROR();
     glGenBuffers(1, &EBO);TEST_OPENGL_ERROR();
 
-    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
     glBindBuffer(GL_ARRAY_BUFFER, VBO);TEST_OPENGL_ERROR();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);TEST_OPENGL_ERROR();
 
@@ -355,10 +356,11 @@ void DrawScene()
                           (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);TEST_OPENGL_ERROR();
 
-    glBindVertexArray(VAO);TEST_OPENGL_ERROR();
+    glBindVertexArray(scene_VAO);TEST_OPENGL_ERROR();
     glDrawElements(GL_TRIANGLES, vertices_size, GL_UNSIGNED_INT, 0);TEST_OPENGL_ERROR();
 
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
     glBindVertexArray(0);TEST_OPENGL_ERROR();
     glBindTexture(GL_TEXTURE_2D, 0);TEST_OPENGL_ERROR();
 }
